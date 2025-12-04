@@ -25,6 +25,11 @@ index/
 data/*.json
 !data/recipe_rag_ready.json
 
+data/chroma_db_*/
+data/chroma_db_baai/
+data/chroma_db_v3/
+data/raw/
+
 # But keep final processed data if needed (optional):
 #!data/recipe_rag_ready.json  
 
