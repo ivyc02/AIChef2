@@ -36,24 +36,29 @@ node -v
 
 ### 2. Backend Setup
 
-1.  Create a `.env` file in the `AIChef` directory with your API credentials:
+1.  Create a `.env` file in the project root (same level as this README) with your API credentials:
     ```env
     SILICONFLOW_API_KEY=your_api_key
     SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
-    SILICONFLOW_MODEL_NAME=deepseek-ai/DeepSeek-V3
+    SILICONFLOW_MODEL_NAME=your_model_name
     ```
 
-2.  Run the backend:
+2.  Install Python dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  Run the backend:
     ```bash
     # From project root
-    python AIChef/run.py
+    python run.py
     ```
 
 ### 3. Frontend Setup
 
 1.  Navigate to the frontend directory:
     ```bash
-    cd AIChef/frontend
+    cd frontend
     ```
 
 2.  Install dependencies and start the server:
@@ -63,7 +68,7 @@ node -v
     npm run dev
     ```
 
-3.  Open [http://localhost:5173](http://localhost:5173) in your browser.
+3.  Open the website in your browser.
 
 ## Quick Start (Windows)
 
