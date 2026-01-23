@@ -1,10 +1,13 @@
 import json
 import difflib
+import json
+import difflib
+import time
 from typing import Optional
 from .models import RecipeStep, RecipeResponse, RecipeListResponse
 from core.retriever import retrieve_docs
 # ✅ 引入新的优选函数
-from core.generator import smart_select_and_comment, generate_rag_answer 
+from core.generator import smart_select_and_comment, generate_rag_answer, generate_food_image, refine_prompt_with_llm 
 from langchain_openai import ChatOpenAI
 from core.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL_NAME
 
@@ -34,11 +37,54 @@ class RecipeService:
         best_match = candidates[selected_index]
         print(f"🎯 [Service] AI 选中了第 {selected_index} 项: {best_match['name']}")
 
+
+        # === 数据清洗与解析 ===
+        raw_instructions = best_match.get('instructions', [])
+        if isinstance(raw_instructions, str):
+            try: raw_instructions = json.loads(raw_instructions)
+            except: raw_instructions = []
+
+        raw_tags = best_match.get('tags', [])
+        if isinstance(raw_tags, str):
+            try: raw_tags = json.loads(raw_tags)
+            except: raw_tags = []
+
+        formatted_steps = []
+        for idx, step in enumerate(raw_instructions):
+            img_link = step.get('image_url') or step.get('imgLink')
+            if not img_link or img_link == "null": img_link = None
+            
+            formatted_steps.append(
+                RecipeStep(
+                    step_index=idx + 1,
+                    description=step.get('description', ''),
+                    image_url=img_link
+                )
+            )
+
+        # === 核心修改：强制现场生成一张，因为数据库里的图不可用 ===
+        # cover_image = best_match.get('image') # 忽略旧图
+        
+        # 构造Prompt: 菜名 + 标签
+        # gen_prompt = f"{best_match.get('name', '')}, {','.join(raw_tags)}"
+         
+        # LLM 优化
+        refined_prompt = refine_prompt_with_llm(best_match.get('name', ''), raw_tags)
+        generated_url = generate_food_image(refined_prompt, is_refined=True)
+        
+        if generated_url:
+            cover_image = generated_url
+        else:
+            # 兜底：如果生图失败，暂时还是返回 None (或者原来的图，看需求)
+            cover_image = None
+                 # TODO: 这里应该异步把 cover_image 存回数据库，避免每次都生成
+                 # 为了演示方便，暂时只返回给前端显示
+
         return RecipeResponse(
             recipe_id=str(best_match.get('id', 'unknown')),
             recipe_name=best_match.get('name', '未命名'),
             tags=raw_tags,
-            cover_image=best_match.get('image'),
+            cover_image=cover_image,
             steps=formatted_steps,
             message=ai_message # 这里是 AI 针对选中菜谱写的推荐语
         )
@@ -165,11 +211,32 @@ class RecipeService:
                     recipe_id=str(doc.get('id', 'unknown')),
                     recipe_name=recipe_name,
                     tags=raw_tags,
-                    cover_image=doc.get('image'),
+                    cover_image=None, # 强制置空，忽略数据库坏链，确保下方并发逻辑会为每个菜谱生图
                     steps=formatted_steps,
                     message=ai_comment 
                 )
             )
+
+        # === 4. 并行生成图片 (Parallel Image Generation) ===
+        # === 4. 串行生成图片 + LLM 防幻觉优化 (Serial + Anti-Hallucination) ===
+        # 针对免费模型：必须串行以防限流
+        # 针对幻觉问题：先用 DeepSeek 写 Prompt
+        
+        for item in formatted_list:
+            if not item.cover_image:
+                # 1. LLM 优化 Prompt (防幻觉)
+                print(f"🧠 [List] Refining prompt for: {item.recipe_name}...")
+                refined_prompt = refine_prompt_with_llm(item.recipe_name, item.tags)
+                
+                # 2. 调用生图 (带重试)
+                print(f"🎨 [List] Generating image (Serial)...")
+                new_url = generate_food_image(refined_prompt, is_refined=True)
+                
+                if new_url:
+                    item.cover_image = new_url
+                
+                # 3. 冷却防止限流
+                time.sleep(1.5)
 
         # 4. 生成综述
         # 注意：这里传给 summarizer 的是原始 query (或者组合 query)，让 AI 知道用户意图

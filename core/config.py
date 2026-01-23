@@ -23,6 +23,7 @@ os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 LLM_API_KEY = os.getenv("SILICONFLOW_API_KEY")
 LLM_BASE_URL = os.getenv("SILICONFLOW_BASE_URL")
 LLM_MODEL_NAME = (os.getenv("SILICONFLOW_MODEL_NAME") or "").split("#")[0].strip()
+IMAGE_MODEL_NAME = os.getenv("SILICONFLOW_IMAGE_MODEL", "Qwen/Qwen-Image").strip()
 
 
 

@@ -137,44 +137,18 @@ const RecipeDetail = () => {
                                         Step {step.step_index}
                                     </h3>
                                     <p className="text-slate-700 text-lg leading-relaxed mb-6 font-light">{step.description}</p>
-                                    <div className="rounded-xl overflow-hidden shadow-sm aspect-video bg-slate-50 flex items-center justify-center border border-slate-100">
-                                        {step.image_url ? (
+                                    {step.image_url && (
+                                        <div className="rounded-xl overflow-hidden shadow-sm aspect-video bg-slate-50 flex items-center justify-center border border-slate-100">
                                             <img src={step.image_url} alt={`Step ${step.step_index}`} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center text-slate-300">
-                                                <ChefHat size={32} className="mb-2 opacity-50" />
-                                                <span className="text-xs font-medium uppercase tracking-wider">Cooking...</span>
-                                            </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Right: Info (Sticky) */}
-                    <div className="space-y-6">
-                        <div className="bg-slate-50 p-8 rounded-2xl sticky top-24 border border-slate-100">
-                            <h3 className="font-bold text-slate-800 mb-6 font-serif text-xl border-b border-slate-200 pb-2">Recipe Info</h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between py-2 border-b border-slate-200 border-dashed">
-                                    <div className="flex items-center gap-2 text-slate-500 uppercase text-xs tracking-wider">
-                                        <Clock size={16} />
-                                        <span>Prep Time</span>
-                                    </div>
-                                    <span className="font-medium text-slate-900 font-serif">10 mins</span>
-                                </div>
-                                <div className="flex items-center justify-between py-2 border-b border-slate-200 border-dashed">
-                                    <div className="flex items-center gap-2 text-slate-500 uppercase text-xs tracking-wider">
-                                        <Flame size={16} />
-                                        <span>Cook Time</span>
-                                    </div>
-                                    <span className="font-medium text-slate-900 font-serif">20 mins</span>
-                                </div>
-                                {/* Removed Start Cooking Mode Button */}
-                            </div>
-                        </div>
-                    </div>
+                    {/* Right: Info (Sticky) - REMOVED */}
+                    <div className="space-y-6 hidden"></div>
                 </div>
             </main>
         </div>

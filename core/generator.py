@@ -1,7 +1,11 @@
 from langchain_openai import ChatOpenAI
-from core.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL_NAME
+from core.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL_NAME, IMAGE_MODEL_NAME
 import re
 import ast
+import os
+import requests
+import json
+import time # for retry sleep
 
 # 初始化客户端 (使用 LangChain 统一接口)
 llm = None
@@ -140,6 +144,107 @@ def smart_select_and_comment(query: str, candidates: list):
     except Exception as e:
         print(f"❌ [Generator] 报错: {e}")
         return 0, "为您推荐以下菜谱："
+
+def refine_prompt_with_llm(name: str, tags: list) -> str:
+    """
+    使用 DeepSeek 将简单的菜谱信息转化为精准、克制的英文生图 Prompt
+    """
+    if not llm:
+        return f"{name}, {', '.join(tags)}"
+    
+    # 构造防幻觉 Prompt
+    system_prompt = """
+    You are a professional food photographer's assistant.
+    Your task is to write a SPECIFIC text-to-image prompt for a dish, based on its Name and Tags.
+    
+    【RULES】
+    1. Visualize the dish based strictly on its name.
+    2. **NEGATIVE CONSTRAINTS**: Do NOT include any ingredients or garnishes (like chili, parsley, onions, lemon) unless they are explicitly implied by the Dish Name.
+    3. Style: appetizing, 8k resolution, cinematic lighting, photorealistic, clean composition.
+    4. Output ONLY the English prompt string. No explanations.
+    """
+    
+    user_prompt = f"Dish Name: {name}\nTags: {', '.join(tags)}\n\nWrite the prompt:"
+    
+    try:
+        from langchain_core.messages import SystemMessage, HumanMessage
+        response = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt)
+        ])
+        polished_prompt = response.content.strip()
+        print(f"✨ [Generator] Prompt Refined: {polished_prompt}")
+        return polished_prompt
+    except Exception as e:
+        print(f"⚠️ [Generator] Prompt refinement failed: {e}")
+        return f"{name}, {', '.join(tags)}"
+
+def generate_food_image(prompt: str, is_refined: bool = False) -> str:
+    """
+    独立生图函数：调用 SiliconFlow 模型生成高质量美食图片
+    增加重试机制 (Retry)
+    """
+    # 优先使用 SiliconFlow 官方地址
+    base_url = "https://api.siliconflow.cn/v1"
+    api_key = os.getenv("SILICONFLOW_API_KEY")
+    
+    if not api_key:
+        print("⚠️ [Generator] 未配置 SILICONFLOW_API_KEY，无法生图")
+        return None
+
+    url = f"{base_url}/images/generations"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    # 构造生图 Prompt
+    full_prompt = prompt
+    if not is_refined:
+         # 简单的兜底包装，防止裸奔
+         full_prompt = f"Professional food photography of {prompt}. High quality, 8k, photorealistic."
+    
+    # 关键修正：对于 Kolors (免费版)，它对英文长句的理解可能不如 Qwen
+    # 为了保险，我们始终加上质量词，但保留 refiner 的防幻觉成果
+    if IMAGE_MODEL_NAME == "Kwai-Kolors/Kolors":
+         if not "Professional food photography" in full_prompt:
+             full_prompt = f"Professional food photography of {full_prompt}, 8k, photorealistic"
+
+    payload = {
+        "model": IMAGE_MODEL_NAME, # <--- 动态读取
+        "prompt": full_prompt,
+        "image_size": "1024x1024",
+        "batch_size": 1,
+        "num_inference_steps": 25, 
+        "guidance_scale": 7.5
+    }
+    
+    # === 增加重试逻辑 (Max 3 times) ===
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            print(f"🎨 [Generator] ({attempt+1}/{max_retries}) Generating with {IMAGE_MODEL_NAME}...")
+            response = requests.post(url, headers=headers, json=payload, timeout=60)
+            
+            if response.status_code == 200:
+                data = response.json()
+                images = data.get("images", [])
+                if images:
+                    image_url = images[0].get("url")
+                    print(f"✅ [Generator] Success!")
+                    return image_url
+            
+            # 如果失败 (如 429 Too Many Requests)，打印并等待
+            print(f"⚠️ [Generator] Attempt {attempt+1} failed: {response.status_code} - {response.text}")
+            if attempt < max_retries - 1:
+                time.sleep(2) # 失败后冷却 2 秒再试
+                
+        except Exception as e:
+            print(f"❌ [Generator] Exception on attempt {attempt+1}: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(2)
+        
+    return None
 
 def generate_rag_answer(query: str, candidates: list) -> str:
     """

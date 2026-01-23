@@ -62,22 +62,7 @@ const ResultsPage = () => {
         const fetchRecipes = async () => {
             if (!query) return;
 
-            // 1. Check Cache (Instant Load for "Back" navigation)
-            const cacheKey = `aichef_cache_${query}`;
-            const cachedData = sessionStorage.getItem(cacheKey);
-            if (cachedData) {
-                try {
-                    const parsed = JSON.parse(cachedData);
-                    setRecipes(parsed.candidates);
-                    setAiMessage(parsed.ai_message || '');
-                    setLoading(false);
-                    return; // Skip network call
-                } catch (e) {
-                    sessionStorage.removeItem(cacheKey);
-                }
-            }
-
-            // 2. Network Call (if no cache)
+            // 2. Network Call (Always)
             setLoading(true);
             setRecipes([]);
             setAiMessage('');
@@ -87,8 +72,8 @@ const ResultsPage = () => {
             try {
                 const res = await api.post('/api/search', { query, limit: 5 });
 
-                // Save to Cache
-                sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
+                // No Cache Saving
+                // sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
 
                 if (res.data.candidates) {
                     setRecipes(res.data.candidates);
