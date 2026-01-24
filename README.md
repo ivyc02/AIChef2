@@ -11,11 +11,11 @@ AIChef is an intelligent recipe recommendation system built with **RAG (Retrieva
 
 Before starting, please ensure your system meets the following requirements:
 
-1.  **Node.js**: **Version 18+** (v18.17.0 or higher is recommended).
+1.  **Node.js**: **Version 18** .
     *   Verify with: `node -v`
 2.  **Python**: **Version 3.10+**.
     *   Verify with: `python --version`
-3.  **Git**: (Optional) For cloning the repository.
+
 
 ---
 
@@ -120,11 +120,10 @@ AIChef 是一个基于 **RAG (检索增强生成)** 技术构建的智能菜谱�
 
 在开始之前，请确保您的电脑已经安装了以下软件：
 
-1.  **Node.js**: **版本 18+** (推荐 v18.17.0 或更高)。
+1.  **Node.js**: **版本 18** 
     *   验证命令: `node -v`
 2.  **Python**: **版本 3.10+**。
     *   验证命令: `python --version`
-3.  **Git**: (可选) 用于克隆代码仓库。
 
 ---
 
