@@ -29,7 +29,7 @@ If you are on Windows, we provide an automated script for quick startup.
     *   Create a Python virtual environment and install dependencies.
     *   Install Node.js dependencies for the frontend.
     *   **Simultaneously launch** the Backend (port 8000) and Frontend (port 5173).
-4.  **Access**: The browser will automatically open `http://localhost:5173`.
+4.  **Access**: Open the website in your browser, like `http://localhost:5173`.
 
 ---
 
@@ -137,7 +137,7 @@ AIChef 是一个基于 **RAG (检索增强生成)** 技术构建的智能菜谱�
     *   创建 Python 虚拟环境并安装依赖。
     *   进入前端目录安装 Node 依赖。
     *   **同时启动** 后端 (8000端口) 和 前端 (5173端口)。
-4.  **访问**: 浏览器会自动打开 `http://localhost:5173`。
+4.  **访问**: 打开浏览器访问前端网页，如 `http://localhost:5173`。
 
 ---
 
@@ -196,7 +196,7 @@ AIChef 是一个基于 **RAG (检索增强生成)** 技术构建的智能菜谱�
     ```
 
 5.  **访问项目**:
-    打开浏览器访问 `http://localhost:5173`。
+    打开浏览器访问前端网页，如 `http://localhost:5173`。
 
 ---
 
