@@ -86,7 +86,7 @@ def health_check():
     return {"status": "ok", "message": "AIChef API is running!"}
 
 @app.post("/api/search", response_model=RecipeListResponse)
-async def search_recipe(
+def search_recipe(
     request: QueryRequest, 
     current_user: sql_models.User = Depends(get_current_user) # 注入当前用户
 ):
@@ -117,7 +117,7 @@ async def search_recipe(
     return result
 
 @app.post("/api/consult")
-async def consult_chef_api(request: ConsultRequest):
+def consult_chef_api(request: ConsultRequest):
     """
     AI 厨师交互接口
     """
